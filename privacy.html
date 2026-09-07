@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Topo</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 3rem 1.25rem 5rem;
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #0f172a;
+    background: #f8fafc;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 44rem; margin: 0 auto; }
+  a { color: #0d9488; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 .75rem; letter-spacing: -.01em; }
+  h3 { font-size: 1.02rem; margin: 1.75rem 0 .5rem; }
+  p, li { color: #334155; }
+  hr { border: 0; border-top: 1px solid #e2e8f0; margin: 2.5rem 0; }
+  code {
+    font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #e2e8f0; padding: .1em .35em; border-radius: 4px;
+  }
+  /* Tables carry the "what we collect" grid, which is the part people
+     actually read. It has to stay legible on a phone. */
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+  th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid #e2e8f0; }
+  th { font-weight: 700; color: #0f172a; white-space: nowrap; }
+  .home { display: inline-block; margin-bottom: 2rem; font-size: .85rem; font-weight: 700; text-decoration: none; }
+  footer { margin-top: 4rem; font-size: .8rem; color: #64748b; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0f172a; color: #e2e8f0; }
+    p, li { color: #cbd5e1; }
+    h1, h2, h3, th { color: #f1f5f9; }
+    code { background: #1e293b; }
+    th, td, hr { border-color: #1e293b; }
+    a { color: #2dd4bf; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="home" href="./">← Topo</a>
+<h1>Privacy Policy for topo</h1>
+<p><strong>Last updated: 13 August 2026</strong></p>
+<p>topo maps how the people you know are connected to each other. This policy describes exactly what the app collects, why, and what it never does. It was written against the code rather than from a template, so where it makes a specific claim — that contacts are hashed on your device, that your surname is never displayed — that claim is checkable in the app's behaviour.</p>
+<p>If you have a question this does not answer, contact us at the address at the bottom.</p>
+<h2>Who is responsible</h2>
+<p>topo is operated by the developer of the topo app ("we", "us"). Data is stored with Supabase, which hosts our database and file storage.</p>
+<h2>What we collect, and why</h2>
+<h3>Things you enter</h3>
+<div class="scroll"><table><thead><tr>
+<th>What</th>
+<th>Why</th>
+<th>Shown to others</th>
+</tr></thead><tbody>
+<tr>
+<td>First name</td>
+<td>Identifies you on the map</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Last name</td>
+<td>Distinguishes people with the same first name</td>
+<td><strong>Only the first letter.</strong> Stored in full, displayed as an initial</td>
+</tr>
+<tr>
+<td>Username</td>
+<td>How people look you up</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Email address</td>
+<td>Signing in, and account recovery</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Password</td>
+<td>Signing in</td>
+<td>No — stored only as a hash, by Supabase Auth</td>
+</tr>
+<tr>
+<td>Date of birth</td>
+<td>Age-appropriate defaults</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Phone number</td>
+<td>So people who already have your number can find you</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Photo</td>
+<td>Your node on the map</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Interests</td>
+<td>Finding people you have things in common with</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Bio</td>
+<td>Your profile</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Social links</td>
+<td>Your profile</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Messages</td>
+<td>Delivering them</td>
+<td>To the people in that conversation</td>
+</tr>
+</tbody></table></div>
+<h3>Things the app derives</h3>
+<ul>
+<li><strong>Your connections</strong> — who you are connected to, and requests you have sent</li>
+</ul>
+<p>  or received. Other people can see connections you have in common with them. - <strong>Events</strong> you host or attend, and who else is attending. - <strong>Suggestions</strong> — the app works out when it might be worth messaging someone   (for example, that you have not spoken in several months). <strong>This is computed   on your device from data already there.</strong> Nothing about who you know is sent   anywhere to produce it, and it is not shared with anyone.</p>
+<h3>Location</h3>
+<p>Only while <strong>Nearby</strong> is switched on, and only then. Your approximate location is used to show other people who have Nearby on at the same time. It is not kept as a history, and Nearby turns itself off after three hours.</p>
+<h3>Contacts</h3>
+<p>Only if you ask the app to check them.</p>
+<p><strong>Your contacts never leave your device.</strong> Each email address and phone number is hashed on your phone with SHA-256, and only those hashes are sent, to be compared against hashes of accounts that already exist. A hash cannot be turned back into an address. We do not store your contact list, and <strong>we never contact anyone in it.</strong></p>
+<h3>Camera</h3>
+<p>Used only to scan QR codes, when you open the scanner. No image is stored or transmitted.</p>
+<h3>Technical data</h3>
+<p>Standard server logs from our hosting provider, including IP address and timestamps, kept for security and debugging.</p>
+<h2>What we do not do</h2>
+<ul>
+<li>We do not sell your data, and we do not share it with advertisers.</li>
+<li>We do not use it to train machine-learning models.</li>
+<li>We do not upload your contacts.</li>
+<li>We do not track you across other apps or websites.</li>
+<li>We do not show your full surname, date of birth, email address, or phone</li>
+</ul>
+<p>  number to other users.</p>
+<h2>Notifications</h2>
+<p>If you allow them, the app may remind you about someone worth messaging or an event coming up. <strong>These reminders are scheduled by your own device from information already on it.</strong> If you turn notifications off, in the app or in your phone's settings, they stop.</p>
+<h2>Who can see what</h2>
+<ul>
+<li><strong>Your profile</strong> — first name and last initial, username, photo, bio and</li>
+</ul>
+<p>  interests — is visible to people you are connected to, and to people who look   up your username or scan your code. - <strong>Nearby</strong> shows your first name and last initial and your photo to others   with Nearby on. Your username is hidden until you have connected. - <strong>Messages</strong> are visible only to the people in that conversation. They are   not end-to-end encrypted: they are encrypted in transit and at rest, and are   technically readable by us on the server. We do not read them. - <strong>Blocking</strong> someone removes you from each other's view.</p>
+<h2>How long we keep it</h2>
+<p>Until you delete it. Deleting your account removes your profile, connections, messages, events you created and uploaded photos. Messages you sent to another person may remain visible in that person's copy of the conversation.</p>
+<p>You can delete your account in the app: <strong>Settings → Delete account.</strong> It takes effect immediately and is not reversible.</p>
+<h2>Your rights</h2>
+<p>Depending on where you live you may have the right to access, correct, export or delete your data, and to object to processing. Most of this is available in the app directly; for anything else, contact us and we will respond within 30 days.</p>
+<h2>Children</h2>
+<p>topo is not intended for anyone under 13, and we do not knowingly collect data from children under 13. If you believe a child has an account, contact us and we will remove it.</p>
+<h2>International transfers</h2>
+<p>Our database is hosted by Supabase. Depending on the region of that instance, your data may be processed outside your own country, under appropriate safeguards.</p>
+<h2>Security</h2>
+<p>Passwords are hashed by Supabase Auth and never stored by us in a readable form. Access to your data is enforced at the database level by row-level security policies, so one account cannot read another's data even if the app were tampered with. Data is encrypted in transit.</p>
+<p>No system is perfectly secure. If we become aware of a breach affecting your data we will notify you and any regulator we are required to.</p>
+<h2>Changes</h2>
+<p>If this policy changes materially we will say so in the app before the change takes effect. The date at the top always reflects the current version.</p>
+<h2>Contact</h2>
+<p><strong>Email:</strong> privacy@topo.app</p>
+<p>_(Replace with a monitored address before publishing. The App Store requires a working contact route, and this address must accept mail.)_</p>
+<footer>Topo · <a href="./">Support</a> · <a href="./privacy.html">Privacy</a> · <a href="./terms.html">Terms</a></footer>
+</div>
+</body>
+</html>
