@@ -6,273 +6,921 @@
 <title>topo — see how you know everyone</title>
 <meta name="description" content="topo draws your network as a map: your connections, the people they know, and how everyone fits together. Support, privacy policy and terms.">
 
-<!-- Link previews. No image is referenced on purpose: a card pointing at a
-     missing file renders worse than one with no image at all. Add og:image
-     here once there is a real screenshot to point it at. -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="topo — see how you know everyone">
 <meta property="og:description" content="Your network as a map, not a list.">
 <meta property="og:url" content="https://jointopo.app/">
 <meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%2310B981'/%3E%3C/svg%3E">
+
+<!-- The same two faces the app loads. preconnect because the stylesheet is the
+     one blocking request on the page and it costs two round trips otherwise. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
 <style>
+  /* ---------------------------------------------------------------------------
+   * Everything here is lifted from the app's own stylesheet in assets/topo.html
+   * rather than approximated, so the two do not drift: .nexus-card, the brand
+   * gradient, the dot grid, the blobs, the easing curves and the chip palette
+   * are the values the app actually uses.
+   *
+   * Light only, on purpose. The app has no dark mode — it hard-sets #F8FAFC on
+   * #0F172A and never reads prefers-color-scheme — so a dark variant here would
+   * show people a product that does not exist.
+   * ------------------------------------------------------------------------- */
   :root {
-    color-scheme: light dark;
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --line: #e2e8f0;
-    --ink: #0f172a;
+    --bg: #F8FAFC;
+    --ink: #0F172A;
     --body: #334155;
-    --muted: #64748b;
-    --accent: #0d9488;
-    --node: #10b981;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f172a;
-      --card: #131f33;
-      --line: #1e293b;
-      --ink: #f1f5f9;
-      --body: #cbd5e1;
-      --muted: #94a3b8;
-      --accent: #2dd4bf;
-      --node: #34d399;
-    }
+    --muted: #64748B;
+    --faint: #94A3B8;
+    --line: #E2E8F0;
+    --card: #FFFFFF;
+    --emerald: #10B981;
+    --emerald-deep: #059669;
+    --sky: #0EA5E9;
+    --cyan: #06B6D4;
+    /* The app's two easings: settle for arrivals, overshoot for taps. */
+    --settle: cubic-bezier(0.22, 1, 0.36, 1);
+    --overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html { scroll-behavior: smooth; }
+
   body {
     margin: 0;
-    /* Side padding lives here once, so nothing inside has to repeat it and no
-       child can accidentally reach the edge on a narrow phone. */
-    padding-block: 3.5rem 4rem;
-    padding-inline: 1.25rem;
-    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    /* One gutter for the whole page, set here so nothing inside can reach the
+       edge on a narrow phone. padding-block keeps the sides from being reset. */
+    padding-block: 0 0;
+    padding-inline: 0;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
     color: var(--ink);
     background: var(--bg);
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
-  .wrap { max-width: 44rem; margin: 0 auto; }
 
-  a { color: var(--accent); }
-  p, li, dd { color: var(--body); }
+  .brand-font { font-weight: 800; letter-spacing: -0.02em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  a { color: var(--emerald-deep); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  p { color: var(--body); margin: 0 0 1rem; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ---- blobs: the app's background, three drifting blurs ---- */
+  .blobs {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob { position: absolute; border-radius: 9999px; filter: blur(90px); }
+  .blob-1 { width: 450px; height: 450px; background: #10B981; opacity: .14; top: -140px; left: -120px; animation: float1 22s ease-in-out infinite; }
+  .blob-2 { width: 400px; height: 400px; background: #38BDF8; opacity: .12; bottom: -150px; right: -120px; animation: float2 26s ease-in-out infinite; }
+  .blob-3 { width: 350px; height: 350px; background: #A78BFA; opacity: .12; top: 42%; left: 52%; animation: float3 24s ease-in-out infinite; }
+  @keyframes float1 { 0%,100% { transform: none; } 50% { transform: translate(60px, 70px); } }
+  @keyframes float2 { 0%,100% { transform: none; } 50% { transform: translate(-70px, -50px); } }
+  @keyframes float3 { 0%,100% { transform: none; } 50% { transform: translate(-50px, 60px) scale(1.08); } }
+
+  .page { position: relative; z-index: 1; }
+  .wrap {
+    max-width: 47rem;
+    margin: 0 auto;
+    padding-inline: 1.25rem;
+  }
 
   /* ---- hero ---- */
-  h1 {
-    font-size: clamp(2.6rem, 11vw, 3.6rem);
-    margin: 0 0 .4rem;
-    letter-spacing: -.035em;
-    background: linear-gradient(90deg, #10b981, #06b6d4);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    /* Some engines drop the gradient and would then paint nothing at all. */
-    -webkit-text-fill-color: transparent;
+  header.hero { padding-block: 3.5rem 0; }
+  .wordmark {
+    font-size: clamp(2.9rem, 13vw, 4.25rem);
+    line-height: 1;
+    margin: 0 0 .75rem;
+    background: linear-gradient(90deg, #10B981, #06B6D4);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
   }
-  .tag {
-    margin: 0 0 .5rem;
-    font-size: clamp(1.1rem, 4.4vw, 1.35rem);
+  .lede {
+    font-size: clamp(1.25rem, 5vw, 1.6rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
     color: var(--ink);
-    font-weight: 600;
-    letter-spacing: -.015em;
+    margin: 0 0 .75rem;
   }
-  .sub { margin: 0 0 2.5rem; color: var(--muted); font-size: 1.02rem; max-width: 30rem; }
+  .sub { color: var(--muted); max-width: 33rem; margin: 0 0 2rem; }
 
-  /* An illustration, not a screenshot. The app draws a node graph, so the page
-     draws one too — it makes the idea legible in a second without pretending
-     to be the product. */
-  .graph {
+  /* ---- the interactive map ---- */
+  .map-card {
+    background: var(--card);
+    border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: 1.25rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+    overflow: hidden;
+  }
+  .map-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .75rem; flex-wrap: wrap;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .map-title { font-size: .9375rem; font-weight: 800; letter-spacing: -.01em; }
+  .map-hint { font-size: .875rem; color: var(--faint); }
+
+  .map-stage {
+    position: relative;
+    /* The dot grid behind the app's map, same size and opacity. */
+    background-image: radial-gradient(rgba(148, 163, 184, .22) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+    touch-action: none;
+  }
+  #graph {
     display: block;
     width: 100%;
+    height: 340px;
+    cursor: grab;
+  }
+  #graph:active { cursor: grabbing; }
+  @media (max-width: 520px) { #graph { height: 300px; } }
+
+  /* The line that answers the app's central question. Reserved height, so
+     selecting somebody does not shift the page under your thumb. */
+  .readout {
+    min-height: 3.5rem;
+    display: flex; align-items: center;
+    gap: .6rem;
+    padding: .75rem 1rem;
+    border-top: 1px solid var(--line);
+    background: #F8FAFC;
+    font-size: .9375rem;
+    color: var(--body);
+  }
+  .readout strong { color: var(--ink); font-weight: 800; }
+
+  /* ---- chips: the app's hashed five-colour palette ---- */
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; padding: .85rem 1rem; border-top: 1px solid var(--line); }
+  .chip {
+    font: inherit;
+    font-size: .875rem;
+    font-weight: 700;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: scale 120ms ease, filter 160ms ease;
+  }
+  .chip:active { scale: .96; }
+  .chip[aria-pressed="false"] { background: #F1F5F9; color: var(--muted); border-color: var(--line); }
+  .c-emerald[aria-pressed="true"] { background: #D1FAE5; color: #065F46; border-color: #A7F3D0; }
+  .c-sky[aria-pressed="true"]     { background: #E0F2FE; color: #075985; border-color: #BAE6FD; }
+  .c-amber[aria-pressed="true"]   { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+  .c-violet[aria-pressed="true"]  { background: #EDE9FE; color: #5B21B6; border-color: #DDD6FE; }
+  .c-rose[aria-pressed="true"]    { background: #FFE4E6; color: #9F1239; border-color: #FECDD3; }
+
+  /* ---- the app's tab bar, reproduced ---- */
+  .tabbar {
+    display: flex; justify-content: center; align-items: center; gap: .35rem;
+    margin: 1.25rem auto 0;
+    padding: .35rem;
+    width: max-content;
     max-width: 100%;
-    height: auto;
-    margin: 0 0 3.5rem;
+    background: rgba(255, 255, 255, .95);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--card);
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
   }
+  .tabbar span {
+    display: grid; place-items: center;
+    padding: .55rem;
+    border-radius: 999px;
+    color: var(--muted);
+  }
+  .tabbar span.on {
+    background: linear-gradient(135deg, #10B981 0%, #0EA5E9 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .08);
+  }
+  .tabbar svg { width: 22px; height: 22px; }
+  .tabbar-note { text-align: center; font-size: .875rem; color: var(--faint); margin: .6rem 0 0; }
 
+  /* ---- sections ---- */
+  section { padding-block: 3.25rem 0; }
   h2 {
-    font-size: 1.15rem;
-    margin: 3rem 0 .6rem;
-    letter-spacing: -.012em;
-    color: var(--ink);
+    font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em;
+    margin: 0 0 1.25rem; color: var(--ink);
   }
 
-  /* ---- features ---- */
-  .feature { padding: 1.4rem 0; border-top: 1px solid var(--line); }
-  .feature:first-of-type { border-top: 0; }
-  .feature h3 {
-    margin: 0 0 .35rem;
-    font-size: 1.02rem;
-    color: var(--ink);
-    letter-spacing: -.01em;
+  .cards { display: grid; gap: .75rem; }
+  @media (min-width: 40rem) { .cards { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: 1.25rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+    padding: 1.15rem 1.25rem;
   }
-  .feature p { margin: 0; }
-
-  dt { font-weight: 700; margin-top: 1.35rem; color: var(--ink); }
-  dd { margin: .3rem 0 0; }
-
-  .links { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem; }
-  .links a {
-    display: inline-block; padding: .55rem 1rem; border-radius: 999px;
-    border: 1px solid var(--line); text-decoration: none;
-    font-weight: 700; font-size: .9rem;
+  .card h3 {
+    margin: 0 0 .4rem;
+    font-size: 1.0625rem; font-weight: 800; letter-spacing: -.015em;
+    display: flex; align-items: center; gap: .5rem;
   }
+  .card p { font-size: .9375rem; margin: 0; }
+  .card svg { width: 20px; height: 20px; color: var(--emerald-deep); flex: none; }
+
+  /* ---- FAQ: real disclosure widgets, keyboard accessible for free ---- */
+  details {
+    background: var(--card);
+    border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: 1.25rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+    margin-bottom: .6rem;
+    overflow: hidden;
+  }
+  summary {
+    cursor: pointer;
+    padding: .95rem 1.15rem;
+    font-weight: 700;
+    font-size: .9375rem;
+    list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: "";
+    width: .55rem; height: .55rem; flex: none;
+    border-right: 2px solid var(--faint);
+    border-bottom: 2px solid var(--faint);
+    transform: rotate(45deg);
+    transition: transform 200ms var(--settle);
+  }
+  details[open] summary::after { transform: rotate(-135deg); }
+  details > div { padding: 0 1.15rem 1.05rem; }
+  details > div p { font-size: .9375rem; }
+
+  /* ---- the outline button: brand as a border, never a fill ---- */
+  .links { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .btn-outline {
+    display: inline-block;
+    padding: .6rem 1.1rem;
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background:
+      linear-gradient(#FFFFFF, #FFFFFF) padding-box,
+      linear-gradient(90deg, #10B981, #0EA5E9) border-box;
+    color: #334155;
+    font-weight: 700;
+    font-size: .9375rem;
+    text-decoration: none;
+    transition: scale 120ms ease;
+  }
+  .btn-outline:active { scale: .96; }
 
   .note {
-    margin-top: 1rem;
-    padding: .9rem 1.05rem;
-    border: 1px solid var(--line);
-    border-radius: 10px;
     background: var(--card);
-    font-size: .93rem;
+    border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: 1.25rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+    padding: 1.15rem 1.25rem;
+    font-size: .9375rem;
     color: var(--body);
   }
 
   footer {
-    margin-top: 4rem; padding-top: 1.5rem;
+    margin-top: 3.5rem;
+    padding: 1.5rem 0 3rem;
     border-top: 1px solid var(--line);
-    font-size: .8rem; color: var(--muted);
+    font-size: .875rem;
+    color: var(--muted);
+  }
+
+  /* ---- arrivals, in the app's idiom: up and in, staggered by 35ms ---- */
+  .reveal { opacity: 0; transform: translateY(10px); }
+  .reveal.in { opacity: 1; transform: none; transition: opacity 280ms var(--settle), transform 280ms var(--settle); }
+
+  /* Anyone who has asked not to see motion gets none of it — including the
+     blobs, which drift for half a minute at a time. */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .blob { animation: none; }
+    .reveal, .reveal.in { opacity: 1; transform: none; transition: none; }
+    .chip:active, .btn-outline:active { scale: 1; }
+    summary::after { transition: none; }
   }
 </style>
 </head>
 <body>
+
+<div class="blobs" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="page">
 <div class="wrap">
 
-  <h1>topo</h1>
-  <p class="tag">See how you know everyone.</p>
-  <p class="sub">
-    topo draws your network as a map — your connections, the people they know,
-    and how everyone fits together. Visible at a glance instead of buried in a
-    list.
-  </p>
-
-  <!-- Inline so it costs no request and cannot fail to load. aria-hidden
-       because it carries no information the text does not already state. -->
-  <svg class="graph" viewBox="0 0 440 200" role="img" aria-hidden="true">
-    <g stroke="var(--line)" stroke-width="1.5">
-      <line x1="220" y1="100" x2="120" y2="52"/>
-      <line x1="220" y1="100" x2="120" y2="150"/>
-      <line x1="220" y1="100" x2="330" y2="62"/>
-      <line x1="220" y1="100" x2="322" y2="146"/>
-      <line x1="120" y1="52"  x2="60"  y2="104"/>
-      <line x1="120" y1="150" x2="60"  y2="104"/>
-      <line x1="330" y1="62"  x2="392" y2="108"/>
-      <line x1="322" y1="146" x2="392" y2="108"/>
-      <line x1="120" y1="52"  x2="330" y2="62"/>
-    </g>
-    <g fill="var(--card)" stroke="var(--node)" stroke-width="2">
-      <circle cx="120" cy="52"  r="13"/>
-      <circle cx="120" cy="150" r="13"/>
-      <circle cx="330" cy="62"  r="13"/>
-      <circle cx="322" cy="146" r="13"/>
-      <circle cx="60"  cy="104" r="9"/>
-      <circle cx="392" cy="108" r="9"/>
-    </g>
-    <circle cx="220" cy="100" r="19" fill="var(--node)"/>
-  </svg>
-
-  <h2>What it does</h2>
-
-  <div class="feature">
-    <h3>See how you know someone</h3>
-    <p>
-      Open anyone's profile and topo shows the connections you have in common,
-      and the event where you met. It is the question a contacts app can never
-      answer.
+  <header class="hero">
+    <h1 class="wordmark brand-font">topo</h1>
+    <p class="lede">See how you know everyone.</p>
+    <p class="sub">
+      topo draws your network as a map — your connections, the people they know,
+      and how everyone fits together. Visible at a glance instead of buried in a
+      list.
     </p>
-  </div>
 
-  <div class="feature">
-    <h3>Events that remember what happened</h3>
-    <p>
-      Host one or join with a code, and check in when you arrive. Afterwards
-      topo shows the people who were there that you haven't added yet, ranked by
-      mutual friends and shared interests — while you still remember the
-      conversation.
-    </p>
-  </div>
+    <!-- The map is the product, so the page gives you one to play with rather
+         than a screenshot of one. Same canvas, same dot grid, same colours. -->
+    <div class="map-card">
+      <div class="map-head">
+        <span class="map-title brand-font">Your map</span>
+        <span class="map-hint">Tap someone. Drag to rearrange.</span>
+      </div>
+      <div class="map-stage">
+        <canvas id="graph" role="img"
+                aria-label="An interactive example network. Tap a person to see how you know them."></canvas>
+      </div>
+      <p class="readout" id="readout" aria-live="polite">
+        Tap anyone to see how you know them.
+      </p>
+      <div class="chips" id="chips" role="group" aria-label="Filter the map by interest"></div>
+    </div>
 
-  <div class="feature">
-    <h3>Nearby</h3>
-    <p>
-      At an event, see who is actually in the room and connect in one tap.
-      Nearby is off until you turn it on, turns itself off after three hours,
-      and only runs while you are using it.
-    </p>
-  </div>
+    <!-- The app's own bottom bar. Decorative here: there is nothing to sign
+         into on this site, so none of it is a control. -->
+    <div class="tabbar" aria-hidden="true">
+      <span class="on"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+      <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+      <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" stroke-width="2.5"/><path stroke-linecap="round" stroke-width="2.5" d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+      <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8-1.09 0-2.13-.175-3.09-.496L3 21l1.5-4.5C3.55 15.14 3 13.62 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></span>
+    </div>
+    <p class="tabbar-note">Map, list, events, messages.</p>
+  </header>
 
-  <div class="feature">
-    <h3>Private by design</h3>
-    <p>
-      Your contacts are hashed on your device and never uploaded. Your location
-      is used only while Nearby is switched on. Your surname, date of birth,
-      email and phone number are never shown to anyone.
-    </p>
-  </div>
+  <section>
+    <h2 class="brand-font reveal">What it does</h2>
+    <div class="cards">
+      <div class="card reveal">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          See how you know someone
+        </h3>
+        <p>
+          Open anyone's profile and topo shows the connections you have in
+          common, and the event where you met. It is the question a contacts app
+          can never answer.
+        </p>
+      </div>
 
-  <h2>Getting topo</h2>
-  <p class="note">
-    <!-- Replace this with the App Store link once the app is approved. A badge
+      <div class="card reveal">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M3 10h18M8 3v4M16 3v4"/></svg>
+          Events that remember
+        </h3>
+        <p>
+          Host one or join with a code, and check in when you arrive. Afterwards
+          topo shows the people who were there that you haven't added yet, ranked
+          by mutual friends and shared interests — while you still remember the
+          conversation.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="2.5" stroke-width="2"/></svg>
+          Nearby
+        </h3>
+        <p>
+          At an event, see who is actually in the room and connect in one tap.
+          Nearby is off until you turn it on, turns itself off after three hours,
+          and only runs while you are using it.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          Private by design
+        </h3>
+        <p>
+          Your contacts are hashed on your device and never uploaded. Your
+          location is used only while Nearby is switched on. Your surname, date
+          of birth, email and phone number are never shown to anyone.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="brand-font reveal">Getting topo</h2>
+    <!-- Replace with the App Store link once the app is approved. A badge
          pointing at a dead URL is worse than a sentence saying "not yet". -->
-    topo is invite-only while it is new. If someone sent you an invite link,
-    open it on your iPhone and it will take you to the right place.
-  </p>
+    <p class="note reveal">
+      topo is invite-only while it is new. If someone sent you an invite link,
+      open it on your iPhone and it will take you to the right place.
+    </p>
+  </section>
 
-  <h2>Support</h2>
-  <p>
-    Something broken, a question, or a request to delete your data — email
-    <a href="mailto:support@jointopo.app">support@jointopo.app</a>. Replies
-    usually come within a couple of days.
-  </p>
-  <p>
-    It helps to include what you were doing, what happened instead, and roughly
-    when. If it is a display problem, the build number at the bottom of
-    <strong>Settings</strong> pins down exactly which version you are on.
-  </p>
+  <section>
+    <h2 class="brand-font reveal">Support</h2>
+    <p class="reveal">
+      Something broken, a question, or a request to delete your data — email
+      <a href="mailto:support@jointopo.app">support@jointopo.app</a>. Replies
+      usually come within a couple of days.
+    </p>
+    <p class="reveal">
+      It helps to include what you were doing, what happened instead, and roughly
+      when. If it is a display problem, the build number at the bottom of
+      <strong>Settings</strong> pins down exactly which version you are on.
+    </p>
+  </section>
 
-  <h2>Common questions</h2>
-  <dl>
-    <dt>How do I delete my account?</dt>
-    <dd>
-      In the app: <strong>Settings → Delete account</strong>. It takes effect
-      immediately and removes your profile, connections, messages and the events
-      you created. It cannot be undone.
-    </dd>
+  <section>
+    <h2 class="brand-font reveal">Common questions</h2>
 
-    <dt>Do you upload my contacts?</dt>
-    <dd>
-      No. Each address is hashed on your phone and only the hashes are sent, to
-      be compared against accounts that already exist. Nobody in your contacts
-      is ever contacted, and the list is never stored.
-    </dd>
+    <details class="reveal">
+      <summary>How do I delete my account?</summary>
+      <div><p>
+        In the app: <strong>Settings → Delete account</strong>. It takes effect
+        immediately and removes your profile, connections, messages and the
+        events you created. It cannot be undone.
+      </p></div>
+    </details>
 
-    <dt>Who can see my phone number or date of birth?</dt>
-    <dd>Nobody. Neither is shown to other people.</dd>
+    <details class="reveal">
+      <summary>Do you upload my contacts?</summary>
+      <div><p>
+        No. Each address is hashed on your phone with SHA-256 and only the
+        hashes are sent, to be compared against accounts that already exist. A
+        hash cannot be turned back into an address. Nobody in your contacts is
+        ever contacted, and the list is never stored.
+      </p></div>
+    </details>
 
-    <dt>What does Nearby share?</dt>
-    <dd>
-      Only while you switch it on, and it turns itself off after three hours.
-      Other people with Nearby on see your first name, last initial and photo —
-      your username stays hidden until you have both agreed to connect.
-    </dd>
+    <details class="reveal">
+      <summary>Who can see my phone number or date of birth?</summary>
+      <div><p>Nobody. Neither is shown to other people.</p></div>
+    </details>
 
-    <dt>I forgot my password.</dt>
-    <dd>
-      Use <strong>Forgot password?</strong> on the sign-in screen. Sign-in takes
-      your username, not your email address.
-    </dd>
-  </dl>
+    <details class="reveal">
+      <summary>What does Nearby share?</summary>
+      <div><p>
+        Only while you switch it on, and it turns itself off after three hours.
+        Other people with Nearby on see your first name, last initial and photo —
+        your username stays hidden until you have both agreed to connect.
+      </p></div>
+    </details>
 
-  <h2>The legal bit</h2>
-  <div class="links">
-    <a href="./privacy.html">Privacy policy</a>
-    <a href="./terms.html">Terms of service</a>
-  </div>
+    <details class="reveal">
+      <summary>I forgot my password.</summary>
+      <div><p>
+        Use <strong>Forgot password?</strong> on the sign-in screen. Sign-in
+        takes your username, not your email address.
+      </p></div>
+    </details>
+  </section>
+
+  <section>
+    <h2 class="brand-font reveal">The legal bit</h2>
+    <div class="links reveal">
+      <a class="btn-outline" href="./privacy.html">Privacy policy</a>
+      <a class="btn-outline" href="./terms.html">Terms of service</a>
+    </div>
+  </section>
 
   <footer>
     topo · <a href="mailto:support@jointopo.app">support@jointopo.app</a>
   </footer>
 
 </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* =========================================================================
+   * Reveal on scroll. Staggered 35ms apart, the same as the app's list rows.
+   * ========================================================================= */
+  var reveals = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if (reduced || !('IntersectionObserver' in window)) {
+    reveals.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      var n = 0;
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var el = e.target;
+        setTimeout(function () { el.classList.add('in'); }, n * 35);
+        n++;
+        io.unobserve(el);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
+    reveals.forEach(function (el) { io.observe(el); });
+  }
+
+  /* =========================================================================
+   * The map.
+   *
+   * Drawn on a canvas with a 2D context because that is what the app does —
+   * an SVG would behave differently under a drag and would not feel like the
+   * same thing. Physics is a plain spring/repulsion loop that parks itself
+   * once the layout settles, so the page is not animating in the background
+   * for as long as it is open.
+   * ========================================================================= */
+  var canvas = document.getElementById('graph');
+  var readout = document.getElementById('readout');
+  var chipsHost = document.getElementById('chips');
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+
+  var ACTIVITIES = ['Climbing', 'Running', 'Cooking', 'Film', 'Music'];
+
+  /* The app hashes a tag name into one of five colour pairs. Same hash, same
+     order, so a chip here is the colour it would be in the app. */
+  var CHIP_CLASSES = ['c-emerald', 'c-sky', 'c-amber', 'c-violet', 'c-rose'];
+  function tagClass(tag) {
+    var hash = 0;
+    for (var i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+    return CHIP_CLASSES[Math.abs(hash) % CHIP_CLASSES.length];
+  }
+
+  // degree 0 is you, 1 is a connection, 2 is someone a connection knows.
+  var people = [
+    { id: 'me',   name: 'You',   degree: 0, tags: ['Climbing', 'Film'] },
+    { id: 'maya', name: 'Maya',  degree: 1, tags: ['Climbing', 'Running'] },
+    { id: 'dev',  name: 'Dev',   degree: 1, tags: ['Film', 'Music'] },
+    { id: 'sam',  name: 'Sam',   degree: 1, tags: ['Cooking'] },
+    { id: 'ana',  name: 'Ana',   degree: 1, tags: ['Climbing', 'Cooking'] },
+    { id: 'leo',  name: 'Leo',   degree: 1, tags: ['Music'] },
+    { id: 'kai',  name: 'Kai',   degree: 2, tags: ['Running'] },
+    { id: 'nina', name: 'Nina',  degree: 2, tags: ['Film'] },
+    { id: 'ruth', name: 'Ruth',  degree: 2, tags: ['Cooking', 'Music'] },
+    { id: 'jon',  name: 'Jonas', degree: 2, tags: ['Climbing'] }
+  ];
+
+  var links = [
+    ['me', 'maya'], ['me', 'dev'], ['me', 'sam'], ['me', 'ana'], ['me', 'leo'],
+    ['maya', 'ana'], ['dev', 'leo'],
+    ['maya', 'kai'], ['dev', 'nina'], ['sam', 'ruth'], ['leo', 'ruth'],
+    ['ana', 'jon'], ['maya', 'jon']
+  ];
+
+  var byId = {};
+  people.forEach(function (p) { byId[p.id] = p; });
+  var edges = links.map(function (l) { return { a: byId[l[0]], b: byId[l[1]] }; });
+
+  people.forEach(function (p, i) {
+    p.radius = p.degree === 0 ? 25 : p.degree === 1 ? 19 : 13;
+    // A ring to start from, so the first frames are never a pile in the corner.
+    var ang = (i / people.length) * Math.PI * 2;
+    var ring = p.degree === 0 ? 0 : p.degree === 1 ? 95 : 165;
+    p.x = Math.cos(ang) * ring;
+    p.y = Math.sin(ang) * ring;
+    p.vx = 0; p.vy = 0;
+  });
+
+  var selected = null;
+  var hovered = null;
+  var dragging = null;
+  var activeTags = {};
+  var W = 0, H = 0, dpr = 1;
+
+  function neighboursOf(node) {
+    var out = [];
+    edges.forEach(function (e) {
+      if (e.a === node) out.push(e.b);
+      else if (e.b === node) out.push(e.a);
+    });
+    return out;
+  }
+
+  /* The app's question: how do I know this person. Mutuals are your own
+     connections who also know them — the same rule as getMutualConnectionsFor. */
+  function describe(node) {
+    if (!node || node.id === 'me') {
+      return 'This is you. Everyone else is drawn by how they reach you.';
+    }
+    var mutual = neighboursOf(node).filter(function (n) { return n.degree === 1; });
+    var direct = node.degree === 1;
+    var names = mutual.map(function (m) { return m.name; });
+    var via = names.length === 0 ? ''
+      : names.length === 1 ? ' through <strong>' + names[0] + '</strong>'
+      : names.length === 2 ? ' through <strong>' + names[0] + '</strong> and <strong>' + names[1] + '</strong>'
+      : ' through <strong>' + names[0] + '</strong> and ' + (names.length - 1) + ' others';
+
+    var shared = node.tags.filter(function (t) { return byId.me.tags.indexOf(t) !== -1; });
+    var also = shared.length ? ' You both do ' + shared.join(' and ') + '.' : '';
+
+    if (direct) {
+      return '<strong>' + node.name + '</strong> is a connection.' +
+        (names.length ? ' You have ' + names.length + ' mutual' + (names.length === 1 ? '' : 's') + '.' : '') + also;
+    }
+    return 'You know <strong>' + node.name + '</strong>' + via + '.' + also;
+  }
+
+  function dimmed(node) {
+    var on = Object.keys(activeTags).filter(function (t) { return activeTags[t]; });
+    if (!on.length) return false;
+    if (node.id === 'me') return false;
+    return !node.tags.some(function (t) { return on.indexOf(t) !== -1; });
+  }
+
+  /* The app's fallback avatar, drawn straight onto the canvas: an emerald tile,
+     a white head and shoulders at 90% and the initial back in emerald. Redrawn
+     here with primitives rather than loaded as an image so there is nothing to
+     wait for and nothing to fail. The 100-unit coordinate space is the SVG's. */
+  function drawAvatar(node, alpha) {
+    var r = node.radius, s = (r * 2) / 100;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.translate(node.x - r, node.y - r);
+    ctx.scale(s, s);
+
+    ctx.fillStyle = '#10B981';
+    ctx.fillRect(0, 0, 100, 100);
+
+    ctx.globalAlpha = alpha * 0.9;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(50, 38, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(20, 88);
+    ctx.bezierCurveTo(20, 62, 32, 54, 50, 54);
+    ctx.bezierCurveTo(68, 54, 80, 62, 80, 88);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#10B981';
+    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText((node.name || 'U').charAt(0).toUpperCase(), 50, 46);
+    ctx.restore();
+  }
+
+  var pulse = 0;
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+
+    var focus = selected || hovered;
+    var lit = focus ? neighboursOf(focus) : [];
+
+    // Edges first, so nodes sit on top of them.
+    edges.forEach(function (e) {
+      var touches = focus && (e.a === focus || e.b === focus);
+      var faded = dimmed(e.a) || dimmed(e.b);
+      ctx.beginPath();
+      ctx.moveTo(e.a.x, e.a.y);
+      ctx.lineTo(e.b.x, e.b.y);
+      if (touches) {
+        ctx.strokeStyle = 'rgba(16, 185, 129, ' + (0.45 + 0.35 * pulse).toFixed(3) + ')';
+        ctx.lineWidth = 2.25;
+      } else {
+        var toYou = e.a.id === 'me' || e.b.id === 'me';
+        var base = toYou ? 0.65 : 0.35;
+        ctx.strokeStyle = 'rgba(203, 213, 225, ' + (faded ? base * 0.4 : base).toFixed(3) + ')';
+        ctx.lineWidth = 1.5;
+      }
+      ctx.stroke();
+    });
+
+    people.forEach(function (p) {
+      var faded = dimmed(p);
+      var alpha = faded ? 0.28 : 1;
+
+      // The app rings a selected node in sky, at radius + 8.
+      if (p === focus) {
+        ctx.strokeStyle = 'rgba(14, 165, 233, 0.65)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius + 8, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (lit.indexOf(p) !== -1) {
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      drawAvatar(p, alpha);
+
+      // A white rim, the same as ring-2 ring-white on the app's avatars.
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = p.degree === 0 ? '#0F172A' : '#334155';
+      ctx.font = (p.degree === 0 ? 'bold 14px' : '500 13px') + ' "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.name, p.x, p.y + p.radius + 15);
+      ctx.globalAlpha = 1;
+    });
+
+    ctx.restore();
+  }
+
+  /* One step of the layout. Springs along the edges, repulsion everywhere, and
+     a pull back towards the middle so nothing wanders off the canvas. */
+  function step() {
+    var moved = 0;
+
+    for (var i = 0; i < people.length; i++) {
+      for (var j = i + 1; j < people.length; j++) {
+        var a = people[i], b = people[j];
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var d2 = dx * dx + dy * dy || 0.01;
+        var d = Math.sqrt(d2);
+        var push = 2600 / d2;
+        var ux = dx / d, uy = dy / d;
+        a.vx -= ux * push; a.vy -= uy * push;
+        b.vx += ux * push; b.vy += uy * push;
+      }
+    }
+
+    edges.forEach(function (e) {
+      var dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+      var d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+      // Second-degree links sit further out, which is what gives the map its
+      // rings instead of an even mesh.
+      var rest = (e.a.id === 'me' || e.b.id === 'me') ? 100 : 78;
+      var f = (d - rest) * 0.012;
+      var ux = dx / d, uy = dy / d;
+      e.a.vx += ux * f; e.a.vy += uy * f;
+      e.b.vx -= ux * f; e.b.vy -= uy * f;
+    });
+
+    people.forEach(function (p) {
+      if (p.id === 'me') { p.x = 0; p.y = 0; p.vx = 0; p.vy = 0; return; }
+      if (p === dragging) { p.vx = 0; p.vy = 0; return; }
+      p.vx += -p.x * 0.0022;
+      p.vy += -p.y * 0.0022;
+      p.vx *= 0.86; p.vy *= 0.86;
+      p.x += p.vx; p.y += p.vy;
+      moved += Math.abs(p.vx) + Math.abs(p.vy);
+    });
+
+    return moved;
+  }
+
+  var raf = null, idle = 0;
+
+  function frame() {
+    pulse = (Math.sin(Date.now() / 420) + 1) / 2;
+    var moved = step();
+    draw();
+
+    // Park the loop when the layout has settled and nothing is lit, rather than
+    // animating an unchanging picture for as long as the tab is open.
+    var needsPulse = !!(selected || hovered);
+    if (moved < 0.35 && !dragging && !needsPulse) {
+      if (++idle > 20) { raf = null; return; }
+    } else {
+      idle = 0;
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function kick() {
+    if (reduced) { draw(); return; }
+    idle = 0;
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = canvas.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    draw();
+    kick();
+  }
+
+  function at(ev) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: ev.clientX - rect.left - rect.width / 2,
+      y: ev.clientY - rect.top - rect.height / 2
+    };
+  }
+
+  function hit(pt) {
+    for (var i = people.length - 1; i >= 0; i--) {
+      var p = people[i];
+      var dx = pt.x - p.x, dy = pt.y - p.y;
+      // A slightly generous radius: these are small targets on a phone.
+      if (dx * dx + dy * dy <= (p.radius + 8) * (p.radius + 8)) return p;
+    }
+    return null;
+  }
+
+  function say(node) {
+    readout.innerHTML = node
+      ? describe(node)
+      : 'Tap anyone to see how you know them.';
+  }
+
+  canvas.addEventListener('pointerdown', function (ev) {
+    var p = hit(at(ev));
+    if (p && p.id !== 'me') dragging = p;
+    selected = p || null;
+    say(selected);
+    if (dragging) canvas.setPointerCapture(ev.pointerId);
+    kick();
+  });
+
+  canvas.addEventListener('pointermove', function (ev) {
+    var pt = at(ev);
+    if (dragging) {
+      dragging.x = pt.x; dragging.y = pt.y;
+      kick();
+      return;
+    }
+    // Hover is a pointer nicety; on touch the tap already selected.
+    if (ev.pointerType === 'mouse') {
+      var p = hit(pt);
+      if (p !== hovered) {
+        hovered = p;
+        canvas.style.cursor = p ? 'pointer' : 'grab';
+        if (!selected) say(hovered);
+        kick();
+      }
+    }
+  });
+
+  function release(ev) {
+    if (dragging && canvas.hasPointerCapture && canvas.hasPointerCapture(ev.pointerId)) {
+      canvas.releasePointerCapture(ev.pointerId);
+    }
+    dragging = null;
+    kick();
+  }
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointerleave', function () {
+    if (hovered && !selected) { hovered = null; say(null); }
+    hovered = null;
+    canvas.style.cursor = 'grab';
+    kick();
+  });
+
+  /* Interest chips, which do on this page what Filter does in the app. */
+  ACTIVITIES.forEach(function (tag) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip ' + tagClass(tag);
+    b.textContent = tag;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () {
+      activeTags[tag] = !activeTags[tag];
+      b.setAttribute('aria-pressed', activeTags[tag] ? 'true' : 'false');
+      kick();
+    });
+    chipsHost.appendChild(b);
+  });
+
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(resize).observe(canvas);
+  } else {
+    window.addEventListener('resize', resize);
+  }
+
+  // Fonts land after first paint, and the labels are measured with them — so
+  // redraw once they are ready rather than leaving the first frame in fallback.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { draw(); });
+  }
+
+  resize();
+  // Reduced motion gets a settled layout instead of watching it arrange itself.
+  if (reduced) {
+    for (var k = 0; k < 600; k++) step();
+    draw();
+  }
+})();
+</script>
+
 </body>
 </html>
