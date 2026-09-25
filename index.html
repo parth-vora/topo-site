@@ -144,11 +144,13 @@
   #graph {
     display: block;
     width: 100%;
-    height: 340px;
+    height: 400px;
     cursor: grab;
   }
   #graph:active { cursor: grabbing; }
-  @media (max-width: 520px) { #graph { height: 300px; } }
+  /* Shorter on a phone: the cluster settles into the middle, and at 360 there
+     was a visibly empty band of dots across the top of the frame. */
+  @media (max-width: 520px) { #graph { height: 330px; } }
 
   /* The line that answers the app's central question. Reserved height, so
      selecting somebody does not shift the page under your thumb. */
@@ -582,7 +584,7 @@
     p.radius = p.degree === 0 ? 25 : p.degree === 1 ? 19 : 13;
     // A ring to start from, so the first frames are never a pile in the corner.
     var ang = (i / people.length) * Math.PI * 2;
-    var ring = p.degree === 0 ? 0 : p.degree === 1 ? 95 : 165;
+    var ring = p.degree === 0 ? 0 : p.degree === 1 ? 88 : 140;
     p.x = Math.cos(ang) * ring;
     p.y = Math.sin(ang) * ring;
     p.vx = 0; p.vy = 0;
@@ -731,14 +733,47 @@
       ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = p.degree === 0 ? '#0F172A' : '#334155';
+      ctx.globalAlpha = 1;
+    });
+
+    /* Names last, in a pass of their own.
+     *
+     * Drawn inside the loop above, a node that happens to come later paints its
+     * circle straight over the previous one's name — which is what was cutting
+     * "Maya" in half and striking through "You". Ten people in this much space
+     * means labels and faces will overlap; a second pass at least guarantees
+     * the name is the thing on top. The halo covers the rest, where a name
+     * lands on an edge rather than a face. */
+    people.forEach(function (p) {
+      ctx.globalAlpha = dimmed(p) ? 0.28 : 1;
       ctx.font = (p.degree === 0 ? 'bold 14px' : '500 13px') + ' "Plus Jakarta Sans", sans-serif';
       ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.strokeText(p.name, p.x, p.y + p.radius + 15);
+      ctx.fillStyle = p.degree === 0 ? '#0F172A' : '#334155';
       ctx.fillText(p.name, p.x, p.y + p.radius + 15);
       ctx.globalAlpha = 1;
     });
 
     ctx.restore();
+  }
+
+  /* Nobody leaves the canvas. The centering pull alone was not enough — the
+     layout drifted until a second-degree node sat half-drawn against the top
+     edge with only its label showing. The bottom inset is larger than the top
+     because the name is drawn underneath the circle, and a clipped label is as
+     bad as a clipped face. Applied to the dragged node too, so a person cannot
+     be thrown out of view and left there. */
+  function clamp(p) {
+    var limX = Math.max(12, W / 2 - (p.radius + 8));
+    var top = -H / 2 + p.radius + 8;
+    var bottom = H / 2 - (p.radius + 24);
+    if (p.x < -limX) { p.x = -limX; p.vx = 0; }
+    if (p.x > limX) { p.x = limX; p.vx = 0; }
+    if (p.y < top) { p.y = top; p.vy = 0; }
+    if (p.y > bottom) { p.y = bottom; p.vy = 0; }
   }
 
   /* One step of the layout. Springs along the edges, repulsion everywhere, and
@@ -752,7 +787,10 @@
         var dx = b.x - a.x, dy = b.y - a.y;
         var d2 = dx * dx + dy * dy || 0.01;
         var d = Math.sqrt(d2);
-        var push = 2600 / d2;
+        // Gentle. Stronger than this and the outer ring is shoved against the
+        // edges, where the clamp holds it — so everyone ends up queued along
+        // the top in a row instead of spread around you.
+        var push = 1800 / d2;
         var ux = dx / d, uy = dy / d;
         a.vx -= ux * push; a.vy -= uy * push;
         b.vx += ux * push; b.vy += uy * push;
@@ -764,7 +802,7 @@
       var d = Math.sqrt(dx * dx + dy * dy) || 0.01;
       // Second-degree links sit further out, which is what gives the map its
       // rings instead of an even mesh.
-      var rest = (e.a.id === 'me' || e.b.id === 'me') ? 100 : 78;
+      var rest = (e.a.id === 'me' || e.b.id === 'me') ? 85 : 64;
       var f = (d - rest) * 0.012;
       var ux = dx / d, uy = dy / d;
       e.a.vx += ux * f; e.a.vy += uy * f;
@@ -773,11 +811,12 @@
 
     people.forEach(function (p) {
       if (p.id === 'me') { p.x = 0; p.y = 0; p.vx = 0; p.vy = 0; return; }
-      if (p === dragging) { p.vx = 0; p.vy = 0; return; }
-      p.vx += -p.x * 0.0022;
-      p.vy += -p.y * 0.0022;
+      if (p === dragging) { p.vx = 0; p.vy = 0; clamp(p); return; }
+      p.vx += -p.x * 0.005;
+      p.vy += -p.y * 0.005;
       p.vx *= 0.86; p.vy *= 0.86;
       p.x += p.vx; p.y += p.vy;
+      clamp(p);
       moved += Math.abs(p.vx) + Math.abs(p.vy);
     });
 
