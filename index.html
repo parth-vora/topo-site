@@ -13,18 +13,24 @@
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%2310B981'/%3E%3C/svg%3E">
 
-<!-- The same two faces the app loads. preconnect because the stylesheet is the
-     one blocking request on the page and it costs two round trips otherwise. -->
+<!-- Plus Jakarta Sans and JetBrains Mono are the same two faces the app loads.
+     Caveat is this page's only own addition — a handwritten accent used on a
+     single word at a time, never for anything the app itself sets in type.
+     preconnect because the stylesheet is the one blocking request on the page
+     and it costs two round trips otherwise. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 
 <style>
   /* ---------------------------------------------------------------------------
    * Everything here is lifted from the app's own stylesheet in assets/topo.html
    * rather than approximated, so the two do not drift: .nexus-card, the brand
-   * gradient, the dot grid, the blobs, the easing curves and the chip palette
-   * are the values the app actually uses.
+   * gradient, the dot grid, the easing curves and the chip palette are the
+   * values the app actually uses. (An earlier version of this page also had
+   * three blurred "blob" gradients drifting behind the hero, copied from CSS
+   * that exists in topo.html — but nothing in the app actually applies those
+   * classes to an element. It was a background no real screen has. Dropped.)
    *
    * Light only, on purpose. The app has no dark mode — it hard-sets #F8FAFC on
    * #0F172A and never reads prefers-color-scheme — so a dark variant here would
@@ -74,48 +80,225 @@
   p { color: var(--body); margin: 0 0 1rem; }
   p:last-child { margin-bottom: 0; }
 
-  /* ---- blobs: the app's background, three drifting blurs ---- */
-  .blobs {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .blob { position: absolute; border-radius: 9999px; filter: blur(90px); }
-  .blob-1 { width: 450px; height: 450px; background: #10B981; opacity: .14; top: -140px; left: -120px; animation: float1 22s ease-in-out infinite; }
-  .blob-2 { width: 400px; height: 400px; background: #38BDF8; opacity: .12; bottom: -150px; right: -120px; animation: float2 26s ease-in-out infinite; }
-  .blob-3 { width: 350px; height: 350px; background: #A78BFA; opacity: .12; top: 42%; left: 52%; animation: float3 24s ease-in-out infinite; }
-  @keyframes float1 { 0%,100% { transform: none; } 50% { transform: translate(60px, 70px); } }
-  @keyframes float2 { 0%,100% { transform: none; } 50% { transform: translate(-70px, -50px); } }
-  @keyframes float3 { 0%,100% { transform: none; } 50% { transform: translate(-50px, 60px) scale(1.08); } }
-
-  .page { position: relative; z-index: 1; }
   .wrap {
     max-width: 47rem;
     margin: 0 auto;
     padding-inline: 1.25rem;
   }
 
-  /* ---- hero ---- */
-  header.hero { padding-block: 3.5rem 0; }
-  .wordmark {
-    font-size: clamp(2.9rem, 13vw, 4.25rem);
-    line-height: 1;
-    margin: 0 0 .75rem;
+  /* ---- the top bar. Plain anchor links to sections on this same page —
+     there is no product/services taxonomy to hang a menu on, and no web
+     login, so it stays honest about what's actually here. ---- */
+  .nav { padding-block: 1.25rem; }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .nav-mark { display: flex; align-items: center; text-decoration: none; }
+  /* The app's wordmark is always this gradient — never solid ink, never with
+     a dot beside it. There is no dot anywhere in the real app. */
+  .nav-wordmark {
+    font-size: 1.1875rem;
     background: linear-gradient(90deg, #10B981, #06B6D4);
     -webkit-background-clip: text; background-clip: text;
     color: transparent; -webkit-text-fill-color: transparent;
   }
-  .lede {
-    font-size: clamp(1.25rem, 5vw, 1.6rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.25;
-    color: var(--ink);
-    margin: 0 0 .75rem;
+  .nav-links { display: none; gap: 1.75rem; font-size: .875rem; font-weight: 700; }
+  .nav-links a { color: var(--body); text-decoration: none; }
+  .nav-links a:hover { color: var(--ink); }
+  @media (min-width: 40rem) { .nav-links { display: flex; } }
+  .nav-actions { display: flex; align-items: center; gap: 1.25rem; }
+  .nav-support { font-size: .8125rem; font-weight: 700; color: var(--muted); text-decoration: none; display: none; }
+  @media (min-width: 30rem) { .nav-support { display: inline; } }
+  .nav-support:hover { color: var(--ink); }
+
+  /* The app's own bg-brand-gradient (90deg, #10B981 to #06B6D4) — the same
+     fill as the recap screen's Add button — not a solid colour. */
+  .btn-solid {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: .6rem 1.15rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #10B981, #06B6D4);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, .3);
+    color: #fff;
+    font-weight: 700; font-size: .8125rem;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: scale 120ms ease, filter 160ms ease;
   }
-  .sub { color: var(--muted); max-width: 33rem; margin: 0 0 2rem; }
+  .btn-solid:hover { filter: brightness(1.05); }
+  .btn-solid:active { scale: .96; }
+
+  /* ---- hero ---- */
+  header.hero { padding-block: 1.5rem 0; }
+
+  .hero-grid { display: grid; gap: 2.75rem; align-items: center; }
+  @media (min-width: 56rem) { .hero-grid { grid-template-columns: 1.05fr .95fr; gap: 3rem; } }
+
+  /* The one arrival that isn't scroll-triggered: the page's first paint,
+     staggered the same 70ms-per-step rhythm as the app's own list rows, just
+     stretched out. The visual column fades in last, after the words. */
+  .hero-text > * {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: heroIn 480ms var(--settle) forwards;
+  }
+  .hero-text > *:nth-child(2) { animation-delay: 70ms; }
+  .hero-text > *:nth-child(3) { animation-delay: 140ms; }
+  .hero-text > *:nth-child(4) { animation-delay: 210ms; }
+  .hero-visual {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: heroIn 480ms var(--settle) forwards;
+    animation-delay: 280ms;
+  }
+  @keyframes heroIn { to { opacity: 1; transform: none; } }
+
+  .eyebrow {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: .8125rem; font-weight: 800;
+    letter-spacing: .04em; text-transform: uppercase;
+    color: var(--emerald-deep);
+    margin: 0 0 1rem;
+  }
+  .headline {
+    font-size: clamp(2.35rem, 6.2vw, 3.75rem);
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.1rem;
+    color: var(--ink);
+  }
+  .headline .accent {
+    display: block;
+    background: linear-gradient(90deg, #10B981, #06B6D4);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  .sub { color: var(--muted); max-width: 30rem; margin: 0 0 1.75rem; font-size: 1.0625rem; }
+
+  .hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+  .hero-cta .btn-solid { padding: .8rem 1.4rem; font-size: .9375rem; }
+  .hero-note { font-size: .8125rem; color: var(--faint); margin: 0; }
+
+  /* ---- the phone: a mockup of the real recap screen, built from the app's
+     own classes (.nexus-card's radius and shadow, the brand-gradient button,
+     the tab bar), not a screenshot. topo's initData() deliberately seeds
+     nobody but "You" until real data arrives — a made-up network used to
+     ship there and was pulled — so a live screenshot of the app taken any
+     other way would show either an empty map or somebody's real network.
+     This is honest about being a mockup and honest about what it depicts. ---- */
+  .hero-visual { display: flex; justify-content: center; }
+  /* Floaters anchor to the phone's own box, not the grid column's — the
+     column is wider than the phone, and both a centred phone with edge-
+     relative floaters and a reserved-padding gutter left a card sitting on
+     top of the phone's real content instead of beside it. Verified by
+     measuring rendered rects, not by eye. */
+  .phone-wrap { position: relative; width: min(272px, 74vw); }
+  .phone-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9 / 19.2;
+    background: var(--ink);
+    border-radius: 2.75rem;
+    padding: .5rem;
+    box-shadow: 0 30px 60px -22px rgba(15, 23, 42, .35), 0 8px 18px -10px rgba(15, 23, 42, .18);
+  }
+  .phone-notch {
+    position: absolute; top: .5rem; left: 50%; transform: translateX(-50%);
+    width: 32%; height: 1.05rem;
+    background: var(--ink); border-radius: 999px;
+    z-index: 2;
+  }
+  .phone-screen {
+    position: relative;
+    width: 100%; height: 100%;
+    background: var(--bg);
+    border-radius: 2.25rem;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  /* The app's real top bar: the wordmark, then three grey circular icon
+     buttons (notifications, requests, menu) — not a bare bell. Copied from
+     the header in assets/topo.html rather than approximated. */
+  .app-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.5rem .7rem .5rem;
+    flex: none;
+  }
+  .app-topbar .app-wordmark {
+    font-size: .875rem;
+    background: linear-gradient(90deg, #10B981, #06B6D4);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  .app-icons { display: flex; align-items: center; gap: .3rem; }
+  .app-icon-btn {
+    position: relative;
+    width: 1.3rem; height: 1.3rem; border-radius: 999px;
+    background: #F1F5F9; border: 1px solid var(--line);
+    display: grid; place-items: center;
+  }
+  .app-icon-btn svg { width: .6rem; height: .6rem; color: #475569; }
+  .app-icon-badge {
+    position: absolute; top: -.15rem; right: -.15rem;
+    width: .5rem; height: .5rem; border-radius: 999px;
+    background: #F43F5E; border: 1.5px solid #fff;
+  }
+
+  .app-recap { flex: 1; padding: .5rem .65rem 0; overflow: hidden; }
+  .app-recap h4 { font-size: .6rem; font-weight: 800; color: var(--ink); margin: 0 0 .2rem; letter-spacing: -.01em; }
+  .app-recap-sub { font-size: .475rem; color: var(--muted); margin: 0 0 .55rem; }
+  .app-recap-row {
+    display: flex; align-items: flex-start; gap: .45rem;
+    background: #fff; border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: .8rem;
+    padding: .45rem .5rem;
+    margin-bottom: .4rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .03);
+  }
+  .app-avatar {
+    width: 1.55rem; height: 1.55rem; border-radius: 999px; flex: none;
+    display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: .55rem;
+  }
+  .app-recap-body { min-width: 0; flex: 1; }
+  .app-recap-name { font-size: .5625rem; font-weight: 800; color: var(--ink); margin: 0; }
+  .app-recap-meta { font-size: .45rem; color: var(--muted); margin: .1rem 0 0; }
+  .app-recap-reason { font-size: .45rem; color: #334155; margin: .15rem 0 0; line-height: 1.3; }
+  .app-add-btn {
+    flex: none; align-self: center;
+    font-size: .4375rem; font-weight: 800; color: #fff;
+    padding: .3rem .5rem; border-radius: 999px;
+    background: linear-gradient(135deg, #10B981, #0EA5E9);
+  }
+  .app-tabbar {
+    flex: none;
+    display: flex; justify-content: space-around; align-items: center;
+    padding: .5rem .4rem .65rem;
+    border-top: 1px solid var(--line);
+    background: rgba(255, 255, 255, .92);
+  }
+  .app-tabbar span { width: 1.5rem; height: 1.5rem; border-radius: 999px; display: grid; place-items: center; color: var(--muted); }
+  .app-tabbar span.on { background: linear-gradient(135deg, #10B981, #0EA5E9); color: #fff; }
+  .app-tabbar svg { width: .8rem; height: .8rem; }
+
+  /* ---- floating callouts beside the phone: a grid of three on a phone,
+     the same three pulled out and pinned around the frame once there's
+     room. Colours are the app's own hashed chip palette, not new ones. ---- */
+  .floaters { margin-top: 1.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+  .float-card { padding: .75rem .65rem; border-radius: 1rem; font-size: .6875rem; font-weight: 700; line-height: 1.25; text-align: center; }
+  .float-stat { display: block; font-size: 1.15rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: .1rem; }
+  .float-1 { background: #D1FAE5; color: #065F46; }
+  .float-2 { background: #E0F2FE; color: #075985; }
+  .float-3 { background: #EDE9FE; color: #5B21B6; }
+  @media (min-width: 64rem) {
+    .floaters { display: contents; }
+    .float-card {
+      position: absolute; width: 8rem; text-align: left; font-size: .75rem;
+      padding: .85rem .95rem; border-radius: 1.25rem;
+      box-shadow: 0 12px 26px -12px rgba(15, 23, 42, .18);
+    }
+    .float-stat { font-size: 1.35rem; }
+    .float-1 { top: -.75rem; right: -7rem; }
+    .float-2 { top: 44%; right: -7rem; transform: translateY(-50%); }
+    .float-3 { bottom: -.5rem; right: -7rem; }
+  }
 
   /* ---- the interactive map ---- */
   .map-card {
@@ -186,70 +369,118 @@
   .c-violet[aria-pressed="true"]  { background: #EDE9FE; color: #5B21B6; border-color: #DDD6FE; }
   .c-rose[aria-pressed="true"]    { background: #FFE4E6; color: #9F1239; border-color: #FECDD3; }
 
-  /* ---- the app's tab bar, reproduced ---- */
-  .tabbar {
-    display: flex; justify-content: center; align-items: center; gap: .35rem;
-    margin: 1.25rem auto 0;
-    padding: .35rem;
-    width: max-content;
-    max-width: 100%;
-    background: rgba(255, 255, 255, .95);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
-  }
-  .tabbar span {
-    display: grid; place-items: center;
-    padding: .55rem;
-    border-radius: 999px;
-    color: var(--muted);
-  }
-  .tabbar span.on {
-    background: linear-gradient(135deg, #10B981 0%, #0EA5E9 100%);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, .08);
-  }
-  .tabbar svg { width: 22px; height: 22px; }
-  .tabbar-note { text-align: center; font-size: .875rem; color: var(--faint); margin: .6rem 0 0; }
 
-  /* ---- sections ---- */
-  section { padding-block: 3.25rem 0; }
+  /* ---- sections. Generous, deliberate gaps rather than a steady, even
+     scroll — the difference between a page that feels considered and one
+     that feels like a list of paragraphs. ---- */
+  section { padding-block: 7rem 0; }
   h2 {
-    font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em;
-    margin: 0 0 1.25rem; color: var(--ink);
+    font-size: clamp(1.85rem, 4.2vw, 2.75rem); font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.12;
+    margin: 0 0 1.75rem; color: var(--ink);
   }
+  /* A handwritten word inside a set headline — Caveat, not Plus Jakarta
+     Sans, and only ever one word at a time. */
+  .script {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    color: var(--emerald-deep);
+  }
+  .squiggle { width: 6.5rem; height: auto; margin: -.5rem 0 1.75rem; display: block; }
 
-  .cards { display: grid; gap: .75rem; }
-  @media (min-width: 40rem) { .cards { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); } }
-  .card {
+  /* ---- full-bleed colour bands, alternating with the plain background so
+     the page has rhythm from a distance, not just from its content. The
+     tint is the brand gradient at 3% — emerald into sky, the same pair as
+     the wordmark and the tab bar's active pill, just nowhere near full
+     strength. ---- */
+  .band { padding-block: 6rem; }
+  .band-tint { background: linear-gradient(180deg, #ECFDF5, #F0F9FF); }
+
+  /* ---- the comparison: what a contacts app gives you against what topo
+     does with the same information. ---- */
+  .compare {
     background: var(--card);
     border: 1px solid rgba(226, 232, 240, .9);
     border-radius: 1.25rem;
     box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
-    padding: 1.15rem 1.25rem;
-  }
-  .card h3 {
-    margin: 0 0 .4rem;
-    font-size: 1.0625rem; font-weight: 800; letter-spacing: -.015em;
-    display: flex; align-items: center; gap: .5rem;
-  }
-  .card p { font-size: .9375rem; margin: 0; }
-  .card svg { width: 20px; height: 20px; color: var(--emerald-deep); flex: none; }
-
-  /* ---- FAQ: real disclosure widgets, keyboard accessible for free ---- */
-  details {
-    background: var(--card);
-    border: 1px solid rgba(226, 232, 240, .9);
-    border-radius: 1.25rem;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
-    margin-bottom: .6rem;
     overflow: hidden;
   }
+  .compare-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1.15fr;
+    align-items: center;
+    gap: .85rem;
+    padding: 1.05rem 1.15rem;
+    border-top: 1px solid var(--line);
+    transition: background-color 160ms ease;
+  }
+  .compare-row:first-child { border-top: none; }
+  .compare-row:hover { background: rgba(16, 185, 129, .05); }
+  .compare-row:hover .compare-arrow { color: var(--emerald-deep); }
+  .compare-old { font-size: .9375rem; color: var(--muted); }
+  .compare-arrow { color: var(--faint); flex: none; transition: color 160ms ease; }
+  .compare-arrow svg { width: 18px; height: 18px; display: block; }
+  .compare-new { font-size: 1.0625rem; font-weight: 800; color: var(--ink); letter-spacing: -.015em; }
+  @media (max-width: 30rem) {
+    .compare-row { grid-template-columns: 1fr; gap: .3rem; }
+    .compare-arrow { display: none; }
+    .compare-new::before { content: "\2192  "; color: var(--emerald-deep); }
+  }
+
+  /* ---- how it works: numbered steps, the mono font doing what it does in
+     the app — labelling something precise, like an event code. ---- */
+  .steps { display: flex; flex-direction: column; }
+  .step {
+    display: flex; gap: 1.25rem; padding: 1.75rem 1rem; margin-inline: -1rem;
+    border-top: 1px solid var(--line); border-radius: 1rem;
+    transition: background-color 160ms ease, transform 160ms ease;
+  }
+  .step:first-child { border-top: none; }
+  .step:hover { background: rgba(16, 185, 129, .05); transform: translateX(.25rem); }
+  .step-num {
+    flex: none; width: 2.5rem; padding-top: .2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: .9375rem;
+    color: var(--emerald-deep);
+  }
+  .step h3 {
+    margin: 0 0 .45rem;
+    font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em;
+    color: var(--ink);
+  }
+  .step p { font-size: 1rem; margin: 0; max-width: 32rem; }
+
+  /* ---- a strip of short, checkable claims — the same idea as a nutrition
+     label, not a boast. ---- */
+  .trust-bar {
+    margin-top: 1.25rem;
+    padding: .9rem 1.15rem;
+    background: rgba(255, 255, 255, .7);
+    border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: 1.25rem;
+    font-size: .8125rem;
+    font-weight: 700;
+    color: var(--body);
+    text-align: center;
+  }
+
+
+  /* ---- FAQ: real disclosure widgets, grouped into one card the way the
+     app groups related rows, rather than five separate floating tiles. ---- */
+  .faq-group {
+    background: var(--card);
+    border: 1px solid rgba(226, 232, 240, .9);
+    border-radius: 1.25rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+    overflow: hidden;
+  }
+  details { border-top: 1px solid var(--line); }
+  details:first-of-type { border-top: none; }
   summary {
     cursor: pointer;
-    padding: .95rem 1.15rem;
-    font-weight: 700;
-    font-size: .9375rem;
+    padding: 1.15rem 1.25rem;
+    font-weight: 800;
+    font-size: 1.0625rem;
     list-style: none;
     display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   }
@@ -266,80 +497,183 @@
   details > div { padding: 0 1.15rem 1.05rem; }
   details > div p { font-size: .9375rem; }
 
-  /* ---- the outline button: brand as a border, never a fill ---- */
-  .links { display: flex; flex-wrap: wrap; gap: .6rem; }
-  .btn-outline {
-    display: inline-block;
-    padding: .6rem 1.1rem;
-    border-radius: 999px;
-    border: 1.5px solid transparent;
-    background:
-      linear-gradient(#FFFFFF, #FFFFFF) padding-box,
-      linear-gradient(90deg, #10B981, #0EA5E9) border-box;
-    color: #334155;
+  /* ---- secondary actions as quiet text, the same as Settings' own
+     "Privacy policy" / "Terms" links — small, bold, underlined, never a
+     pill button. ---- */
+  .legal-links { font-size: .8125rem; color: var(--muted); }
+  .legal-links a {
     font-weight: 700;
-    font-size: .9375rem;
-    text-decoration: none;
-    transition: scale 120ms ease;
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
-  .btn-outline:active { scale: .96; }
-
-  .note {
-    background: var(--card);
-    border: 1px solid rgba(226, 232, 240, .9);
-    border-radius: 1.25rem;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
-    padding: 1.15rem 1.25rem;
-    font-size: .9375rem;
-    color: var(--body);
-  }
+  .legal-links a:hover { color: var(--ink); }
 
   footer {
-    margin-top: 3.5rem;
-    padding: 1.5rem 0 3rem;
+    padding: 1.75rem 0 3rem;
     border-top: 1px solid var(--line);
     font-size: .875rem;
     color: var(--muted);
   }
+  .footer-row { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; justify-content: space-between; }
 
-  /* ---- arrivals, in the app's idiom: up and in, staggered by 35ms ---- */
-  .reveal { opacity: 0; transform: translateY(10px); }
+  /* ---- the one full-strength block of colour on the page, saved for the
+     single moment that's asking for something: go get the app. Full
+     brand gradient, not a tint. ---- */
+  .cta-band {
+    background: linear-gradient(120deg, #10B981, #0EA5E9);
+    text-align: center;
+    padding-block: 6rem;
+  }
+  .cta-heading {
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
+    color: #fff; margin: 0 0 .75rem;
+  }
+  .cta-heading .script { color: #ECFDF5; }
+  .cta-sub { color: rgba(255, 255, 255, .88); font-size: 1.0625rem; margin: 0 auto 2rem; max-width: 26rem; }
+  .btn-light {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: .85rem 1.5rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--emerald-deep);
+    font-weight: 800; font-size: .9375rem;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: scale 120ms ease;
+  }
+  .btn-light:active { scale: .96; }
+
+  /* ---- arrivals, in the app's idiom: up and in, staggered by 35ms. 8px and
+     280ms/settle are the app's own .rows-enter values, not approximations. ---- */
+  .reveal { opacity: 0; transform: translateY(8px); }
   .reveal.in { opacity: 1; transform: none; transition: opacity 280ms var(--settle), transform 280ms var(--settle); }
 
-  /* Anyone who has asked not to see motion gets none of it — including the
-     blobs, which drift for half a minute at a time. */
+  /* Anyone who has asked not to see motion gets none of it. */
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .blob { animation: none; }
+    .hero-text > *, .hero-visual { animation: none; opacity: 1; transform: none; }
     .reveal, .reveal.in { opacity: 1; transform: none; transition: none; }
-    .chip:active, .btn-outline:active { scale: 1; }
+    .chip:active { scale: 1; }
     summary::after { transition: none; }
   }
 </style>
 </head>
 <body>
 
-<div class="blobs" aria-hidden="true">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-</div>
-
-<div class="page">
-<div class="wrap">
+  <nav class="nav">
+   <div class="wrap nav-row">
+    <a href="#" class="nav-mark"><span class="nav-wordmark brand-font">topo</span></a>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#private-by-design">Privacy</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-actions">
+      <a class="nav-support" href="mailto:support@jointopo.app">Support</a>
+      <a class="btn-solid" href="https://apps.apple.com/app/id6801630953" target="_blank" rel="noopener">Get topo</a>
+    </div>
+   </div>
+  </nav>
 
   <header class="hero">
-    <h1 class="wordmark brand-font">topo</h1>
-    <p class="lede">See how you know everyone.</p>
-    <p class="sub">
-      topo draws your network as a map — your connections, the people they know,
-      and how everyone fits together. Visible at a glance instead of buried in a
-      list.
-    </p>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="eyebrow">A map, not a list</p>
+        <h1 class="headline brand-font">See how you know<span class="accent">everyone.</span></h1>
+        <p class="sub">
+          topo draws your network as a map — your connections, the people they
+          know, and how everyone fits together. Visible at a glance instead of
+          buried in a list.
+        </p>
+        <div class="hero-cta">
+          <a class="btn-solid" href="https://apps.apple.com/app/id6801630953" target="_blank" rel="noopener">Get topo</a>
+          <p class="hero-note">Free on the App Store · no feed, no ads.</p>
+        </div>
+      </div>
 
+      <div class="hero-visual">
+       <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="phone-notch" aria-hidden="true"></div>
+          <div class="phone-screen" role="img" aria-label="A mockup of topo's morning-after screen: people from an event, ranked by mutuals and shared interests, each with an Add button.">
+            <div class="app-topbar">
+              <span class="app-wordmark brand-font">topo</span>
+              <div class="app-icons">
+                <span class="app-icon-btn">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                  <span class="app-icon-badge"></span>
+                </span>
+                <span class="app-icon-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg></span>
+                <span class="app-icon-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h18M3 12h18M3 19h18"/></svg></span>
+              </div>
+            </div>
+            <div class="app-recap">
+              <h4>People to add from Maya's Birthday</h4>
+              <p class="app-recap-sub">2 people share your interests · 1 you already have mutuals with</p>
+
+              <div class="app-recap-row">
+                <span class="app-avatar" style="background:#10B981">D</span>
+                <div class="app-recap-body">
+                  <p class="app-recap-name">Dev</p>
+                  <p class="app-recap-meta">Was there &middot; 2 mutuals &middot; Film, Music</p>
+                  <p class="app-recap-reason">You both know Maya, and you're both into film.</p>
+                </div>
+                <span class="app-add-btn">Add</span>
+              </div>
+
+              <div class="app-recap-row">
+                <span class="app-avatar" style="background:#0EA5E9">A</span>
+                <div class="app-recap-body">
+                  <p class="app-recap-name">Ana</p>
+                  <p class="app-recap-meta">Was there &middot; 1 mutual &middot; Climbing</p>
+                </div>
+                <span class="app-add-btn">Add</span>
+              </div>
+
+              <div class="app-recap-row">
+                <span class="app-avatar" style="background:#8B5CF6">L</span>
+                <div class="app-recap-body">
+                  <p class="app-recap-name">Leo</p>
+                  <p class="app-recap-meta">Was there &middot; Music</p>
+                </div>
+                <span class="app-add-btn">Add</span>
+              </div>
+            </div>
+            <div class="app-tabbar" aria-hidden="true">
+              <span class="on"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+              <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+              <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" stroke-width="2.5"/><path stroke-linecap="round" stroke-width="2.5" d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+              <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8-1.09 0-2.13-.175-3.09-.496L3 21l1.5-4.5C3.55 15.14 3 13.62 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="floaters" aria-hidden="true">
+          <div class="float-card float-1">Mutuals &amp; shared interests, on every profile.</div>
+          <div class="float-card float-2"><span class="float-stat">3</span>mutuals with Dev</div>
+          <div class="float-card float-3">Contacts never leave your device.</div>
+        </div>
+       </div>
+      </div>
+    </div>
+  </div>
+  </header>
+
+  <section id="how-it-works-demo">
+   <div class="wrap">
+    <h2 class="brand-font reveal">Try it <span class="script">yourself</span></h2>
+    <!-- A drawn connecting line, not a stock flourish — topo's whole product
+         is the line between two people, so this is the one place on the page
+         an ornament earns its keep. -->
+    <svg class="squiggle reveal" viewBox="0 0 220 28" fill="none" aria-hidden="true">
+      <path d="M3 20C22 4 42 4 60 15C78 26 98 26 116 13C134 0 154 0 172 11C182 17 194 19 208 14" stroke="url(#sq1)" stroke-width="3" stroke-linecap="round"/>
+      <defs><linearGradient id="sq1" x1="0" y1="0" x2="220" y2="0"><stop stop-color="#10B981"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs>
+    </svg>
     <!-- The map is the product, so the page gives you one to play with rather
-         than a screenshot of one. Same canvas, same dot grid, same colours. -->
-    <div class="map-card">
+         than a second screenshot. Same canvas, same dot grid, same colours. -->
+    <div class="map-card reveal">
       <div class="map-head">
         <span class="map-title brand-font">Your map</span>
         <span class="map-hint">Tap someone. Drag to rearrange.</span>
@@ -353,134 +687,138 @@
       </p>
       <div class="chips" id="chips" role="group" aria-label="Filter the map by interest"></div>
     </div>
+   </div>
+  </section>
 
-    <!-- The app's own bottom bar. Decorative here: there is nothing to sign
-         into on this site, so none of it is a control. -->
-    <div class="tabbar" aria-hidden="true">
-      <span class="on"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-      <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
-      <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" stroke-width="2.5"/><path stroke-linecap="round" stroke-width="2.5" d="M3 10h18M8 3v4M16 3v4"/></svg></span>
-      <span><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8-1.09 0-2.13-.175-3.09-.496L3 21l1.5-4.5C3.55 15.14 3 13.62 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></span>
-    </div>
-    <p class="tabbar-note">Map, list, events, messages.</p>
-  </header>
-
-  <section>
-    <h2 class="brand-font reveal">What it does</h2>
-    <div class="cards">
-      <div class="card reveal">
-        <h3>
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-          See how you know someone
-        </h3>
-        <p>
-          Open anyone's profile and topo shows the connections you have in
-          common, and the event where you met. It is the question a contacts app
-          can never answer.
-        </p>
+  <section class="band band-tint">
+   <div class="wrap">
+    <h2 class="brand-font reveal">A contacts app is just a list.</h2>
+    <div class="compare reveal">
+      <div class="compare-row">
+        <span class="compare-old">A flat list of names and numbers</span>
+        <span class="compare-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg></span>
+        <span class="compare-new">A map of how you're connected</span>
       </div>
-
-      <div class="card reveal">
-        <h3>
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M3 10h18M8 3v4M16 3v4"/></svg>
-          Events that remember
-        </h3>
-        <p>
-          Host one or join with a code, and check in when you arrive. Afterwards
-          topo shows the people who were there that you haven't added yet, ranked
-          by mutual friends and shared interests — while you still remember the
-          conversation.
-        </p>
+      <div class="compare-row">
+        <span class="compare-old">No idea who you both know</span>
+        <span class="compare-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg></span>
+        <span class="compare-new">Mutuals, right on their profile</span>
       </div>
-
-      <div class="card reveal">
-        <h3>
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          Private by design
-        </h3>
-        <p>
-          Your contacts are hashed on your device and never uploaded. Your
-          surname, date of birth, email and phone number are never shown to
-          anyone.
-        </p>
+      <div class="compare-row">
+        <span class="compare-old">Forgets where you met</span>
+        <span class="compare-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg></span>
+        <span class="compare-new">Remembers the event</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-old">Frozen the day you saved it</span>
+        <span class="compare-arrow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg></span>
+        <span class="compare-new">Grows as your network does</span>
       </div>
     </div>
+   </div>
   </section>
 
-  <section>
-    <h2 class="brand-font reveal">Getting topo</h2>
-    <!-- Replace with the App Store link once the app is approved. A badge
-         pointing at a dead URL is worse than a sentence saying "not yet". -->
-    <p class="note reveal">
-      topo is invite-only while it is new. If someone sent you an invite link,
-      open it on your iPhone and it will take you to the right place.
-    </p>
+  <section id="how-it-works">
+   <div class="wrap">
+    <h2 class="brand-font reveal">How it works</h2>
+    <div class="steps reveal">
+      <div class="step">
+        <span class="step-num">01</span>
+        <div>
+          <h3>Add the people you meet</h3>
+          <p>Search a username, scan a code, or check your contacts — hashed on your device, never uploaded.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <div>
+          <h3>See how you know anyone</h3>
+          <p>Open a profile for the mutuals you share and the event where you met. A contacts app can't answer that.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <div>
+          <h3>Check into an event</h3>
+          <p>Host one or join with a code. Everyone there is on the map while you're still in the room.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">04</span>
+        <div>
+          <h3>Get the morning-after list</h3>
+          <p>The people who were there that you haven't added yet, ranked by mutuals and shared interests — before you forget who you talked to.</p>
+        </div>
+      </div>
+    </div>
+   </div>
   </section>
 
-  <section>
-    <h2 class="brand-font reveal">Support</h2>
-    <p class="reveal">
-      Something broken, a question, or a request to delete your data — email
-      <a href="mailto:support@jointopo.app">support@jointopo.app</a>. Replies
-      usually come within a couple of days.
+  <section class="band band-tint" id="private-by-design">
+   <div class="wrap">
+    <h2 class="brand-font reveal">Private by design</h2>
+    <p class="reveal" style="max-width:30rem">
+      Your contacts stay on your device, and nobody sees your surname, birthday
+      or number. That's the whole policy.
     </p>
-    <p class="reveal">
-      It helps to include what you were doing, what happened instead, and roughly
-      when. If it is a display problem, the build number at the bottom of
-      <strong>Settings</strong> pins down exactly which version you are on.
-    </p>
+    <p class="trust-bar reveal">Hashed on your device &middot; No ads, ever &middot; Nothing sold, ever &middot; Delete anytime</p>
+   </div>
   </section>
 
-  <section>
+  <section id="faq">
+   <div class="wrap">
     <h2 class="brand-font reveal">Common questions</h2>
 
-    <details class="reveal">
-      <summary>How do I delete my account?</summary>
-      <div><p>
-        In the app: <strong>Settings → Delete account</strong>. It takes effect
-        immediately and removes your profile, connections, messages and the
-        events you created. It cannot be undone.
-      </p></div>
-    </details>
+    <div class="faq-group reveal">
+      <details>
+        <summary>How do I delete my account?</summary>
+        <div><p>
+          In the app: <strong>Settings → Delete account</strong>. It takes effect
+          immediately and removes your profile, connections, messages and the
+          events you created. It cannot be undone.
+        </p></div>
+      </details>
 
-    <details class="reveal">
-      <summary>Do you upload my contacts?</summary>
-      <div><p>
-        No. Each address is hashed on your phone with SHA-256 and only the
-        hashes are sent, to be compared against accounts that already exist. A
-        hash cannot be turned back into an address. Nobody in your contacts is
-        ever contacted, and the list is never stored.
-      </p></div>
-    </details>
+      <details>
+        <summary>Do you upload my contacts?</summary>
+        <div><p>
+          No. Each address is hashed on your phone with SHA-256 and only the
+          hashes are sent, to be compared against accounts that already exist. A
+          hash cannot be turned back into an address. Nobody in your contacts is
+          ever contacted, and the list is never stored.
+        </p></div>
+      </details>
 
-    <details class="reveal">
-      <summary>Who can see my phone number or date of birth?</summary>
-      <div><p>Nobody. Neither is shown to other people.</p></div>
-    </details>
+      <details>
+        <summary>Who can see my phone number or date of birth?</summary>
+        <div><p>Nobody. Neither is shown to other people.</p></div>
+      </details>
 
-    <details class="reveal">
-      <summary>I forgot my password.</summary>
-      <div><p>
-        Use <strong>Forgot password?</strong> on the sign-in screen. Sign-in
-        takes your username, not your email address.
-      </p></div>
-    </details>
+      <details>
+        <summary>I forgot my password.</summary>
+        <div><p>
+          Use <strong>Forgot password?</strong> on the sign-in screen. Sign-in
+          takes your username, not your email address.
+        </p></div>
+      </details>
+    </div>
+   </div>
   </section>
 
-  <section>
-    <h2 class="brand-font reveal">The legal bit</h2>
-    <div class="links reveal">
-      <a class="btn-outline" href="./privacy.html">Privacy policy</a>
-      <a class="btn-outline" href="./terms.html">Terms of service</a>
-    </div>
+  <section class="cta-band" id="getting-topo">
+   <div class="wrap">
+    <h2 class="cta-heading reveal">Get topo, <span class="script">today</span>.</h2>
+    <p class="cta-sub reveal">Free on the App Store for iPhone. No feed, no ads.</p>
+    <p class="reveal"><a class="btn-light" href="https://apps.apple.com/app/id6801630953" target="_blank" rel="noopener">Get topo</a></p>
+   </div>
   </section>
 
   <footer>
-    topo · <a href="mailto:support@jointopo.app">support@jointopo.app</a>
+   <div class="wrap footer-row">
+    <span>topo · <a href="mailto:support@jointopo.app">support@jointopo.app</a></span>
+    <span class="legal-links"><a href="./privacy.html">Privacy policy</a> · <a href="./terms.html">Terms of service</a></span>
+   </div>
   </footer>
-
-</div>
-</div>
 
 <script>
 (function () {
