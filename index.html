@@ -220,7 +220,7 @@
   }
 
   .cards { display: grid; gap: .75rem; }
-  @media (min-width: 40rem) { .cards { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 40rem) { .cards { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); } }
   .card {
     background: var(--card);
     border: 1px solid rgba(226, 232, 240, .9);
@@ -395,25 +395,13 @@
 
       <div class="card reveal">
         <h3>
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="2.5" stroke-width="2"/></svg>
-          Nearby
-        </h3>
-        <p>
-          At an event, see who is actually in the room and connect in one tap.
-          Nearby is off until you turn it on, turns itself off after three hours,
-          and only runs while you are using it.
-        </p>
-      </div>
-
-      <div class="card reveal">
-        <h3>
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
           Private by design
         </h3>
         <p>
           Your contacts are hashed on your device and never uploaded. Your
-          location is used only while Nearby is switched on. Your surname, date
-          of birth, email and phone number are never shown to anyone.
+          surname, date of birth, email and phone number are never shown to
+          anyone.
         </p>
       </div>
     </div>
@@ -468,15 +456,6 @@
     <details class="reveal">
       <summary>Who can see my phone number or date of birth?</summary>
       <div><p>Nobody. Neither is shown to other people.</p></div>
-    </details>
-
-    <details class="reveal">
-      <summary>What does Nearby share?</summary>
-      <div><p>
-        Only while you switch it on, and it turns itself off after three hours.
-        Other people with Nearby on see your first name, last initial and photo —
-        your username stays hidden until you have both agreed to connect.
-      </p></div>
     </details>
 
     <details class="reveal">
