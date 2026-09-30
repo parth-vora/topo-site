@@ -4,18 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Join me on topo</title>
+<title>You're invited on topo</title>
 
-<!-- Without these a shared link is a line of blue text, not a card. -->
+<!--
+  These are what make a shared link render as a card in Messages, WhatsApp and
+  everywhere else, instead of as a line of blue text. A link crawler fetches
+  this page and reads them; it does not run the script below, so whatever the
+  script discovers about the event can never reach the preview. Putting the
+  event's own name in the card needs the tags themselves rendered per event,
+  which a static host cannot do.
+-->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Join me on topo">
-<meta property="og:description" content="See how you know everyone. Invite-only.">
-<meta property="og:url" content="https://www.jointopo.app/invite">
+<meta property="og:title" content="You're invited on topo">
+<meta property="og:description" content="Tap to see the event, who's going, and who you'd want to meet.">
+<meta property="og:url" content="https://www.jointopo.app/event">
 <meta property="og:image" content="https://www.jointopo.app/preview.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Join me on topo">
-<meta name="twitter:description" content="See how you know everyone. Invite-only.">
+<meta name="twitter:title" content="You're invited on topo">
+<meta name="twitter:description" content="Tap to see the event, who's going, and who you'd want to meet.">
 <meta name="twitter:image" content="https://www.jointopo.app/preview.png">
+
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
@@ -34,7 +42,8 @@
     background: linear-gradient(90deg, #10b981, #06b6d4);
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  .lead { font-size: 1.25rem; font-weight: 700; margin: 0 0 1.75rem; }
+  .lead { font-size: 1.25rem; font-weight: 700; margin: 0 0 .5rem; }
+  .when { color: #475569; margin: 0 0 1.75rem; }
   .btn {
     display: block; padding: .9rem 1rem; border-radius: 999px; margin: 0 0 .75rem;
     background: linear-gradient(90deg, #10b981, #0ea5e9); color: #fff;
@@ -46,6 +55,7 @@
   .code strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; color: #0f172a; }
   @media (prefers-color-scheme: dark) {
     body { background: #0f172a; color: #e2e8f0; }
+    .when { color: #94a3b8; }
     .btn.plain { color: #e2e8f0; border-color: #334155; }
     .code strong { color: #e2e8f0; }
   }
@@ -54,11 +64,12 @@
 <body>
 <div class="wrap">
   <h1>topo</h1>
-  <p class="lead" id="lead">You've been invited to topo.</p>
+  <p class="lead" id="lead">You're invited to an event.</p>
+  <p class="when" id="when" hidden></p>
   <a class="btn" id="open" href="#">Open in topo</a>
   <a class="btn plain" id="store" href="#" hidden>Get topo</a>
-  <p class="muted" id="how">New to topo? Get the app and sign up, then come back and tap this link again. You'll be connected straight away.</p>
-  <p class="code">Invite code <strong id="code">—</strong></p>
+  <p class="muted" id="how">New to topo? Get the app, then tap this link again to join the event.</p>
+  <p class="code">Event code <strong id="code">&mdash;</strong></p>
 </div>
 <script>
 (function () {
@@ -67,26 +78,29 @@
   var ANON_KEY = 'sb_publishable_CCrr3TPmfatNVqJnzcne-Q_1ehoBCab';
 
   var params = new URLSearchParams(location.search);
-  var code = (params.get('c') || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  var code = (params.get('c') || '').replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
   var lead = document.getElementById('lead');
   var open = document.getElementById('open');
 
   if (!code) {
-    lead.textContent = 'This invite link is missing its code.';
+    lead.textContent = 'This event link is missing its code.';
     open.hidden = true;
     document.getElementById('how').hidden = true;
     return;
   }
 
-  var appLink = 'topoapp://invite/' + code;
+  var appLink = 'topoapp://event/' + code;
   document.getElementById('code').textContent = code;
   open.href = appLink;
+
   var store = document.getElementById('store');
   store.href = APP_STORE_URL;
   store.hidden = false;
 
-  // Who sent it, first name only.
-  fetch(SUPABASE_URL + '/rest/v1/rpc/invite_preview', {
+  // What the event is, so the page is not a mystery to someone deciding
+  // whether to install an app for it. Public by design: the code is the
+  // secret, and anyone holding it was sent it. Never who is going.
+  fetch(SUPABASE_URL + '/rest/v1/rpc/event_preview', {
     method: 'POST',
     headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({ code: code })
@@ -94,11 +108,29 @@
     .then(function (r) { return r.ok ? r.json() : []; })
     .then(function (rows) {
       var row = Array.isArray(rows) ? rows[0] : rows;
-      if (row && row.first_name) lead.textContent = row.first_name + ' invited you to topo.';
+      if (!row || !row.name) return;
+      lead.textContent = "You're invited to " + row.name + '.';
+      document.title = row.name + ' · topo';
+
+      var bits = [];
+      if (row.starts_at) {
+        var d = new Date(row.starts_at);
+        if (!isNaN(d.getTime())) {
+          bits.push(d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
+          bits.push(d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }));
+        }
+      }
+      if (row.location) bits.push(row.location);
+      if (bits.length) {
+        var when = document.getElementById('when');
+        when.textContent = bits.join(' · ');
+        when.hidden = false;
+      }
     })
     .catch(function () {});
 
-  // Opens topo straight away if it's installed.
+  // Opens topo straight away if it is installed. Someone without it stays here
+  // and sees the Get topo button instead of a dead end.
   setTimeout(function () { location.href = appLink; }, 500);
 })();
 </script>
